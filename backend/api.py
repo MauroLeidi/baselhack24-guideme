@@ -17,8 +17,8 @@ import json
 from fastapi import FastAPI, UploadFile, File
 from typing import List
 import uvicorn
-from backend.helpers import process_files_with_descriptions, encode_image_resized, extract_images_from_markdown, create_chat_messages
-from backend.bing import bing_search
+from helpers import process_files_with_descriptions, encode_image_resized, extract_images_from_markdown, create_chat_messages
+from bing import bing_search
 import re
 import base64
 from dotenv import load_dotenv

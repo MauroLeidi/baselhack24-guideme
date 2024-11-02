@@ -1,5 +1,5 @@
 const getBackendUrl = () => {
-    return process.env.BACKEND_URI || 'http://127.0.0.1:8000';
+    return process.env.NEXT_PUBLIC_BACKEND_URI || 'https://backend-api-guideme.azurewebsites.net';
 };
 
 export const BACKEND_URI = getBackendUrl();
