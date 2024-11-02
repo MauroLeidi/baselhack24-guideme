@@ -23,6 +23,8 @@ export default function Home() {
   const [generatedPages, setGeneratedPages] = useState<UploadedPage[]>([]);
   const [searchOnline, setSearchOnline] = useState(false); // New 
 
+  console.log(BACKEND_URI);
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
@@ -42,6 +44,7 @@ export default function Home() {
     try {
       // Fix 1: Create a proper request body object for search
       let searchResponse = null;
+      console.log(BACKEND_URI);
       if (searchOnline && additionalPrompt) {  // Fix 2: Added description check
         console.log(additionalPrompt)
         const searchResult = await fetch(`${BACKEND_URI}/search`, {
