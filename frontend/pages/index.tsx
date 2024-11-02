@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useState } from "react";
+import { BACKEND_URI } from '../config';
 
 interface UploadedPage {
   id: number;
@@ -43,7 +44,7 @@ export default function Home() {
       let searchResponse = null;
       if (searchOnline && additionalPrompt) {  // Fix 2: Added description check
         console.log(additionalPrompt)
-        const searchResult = await fetch('http://127.0.0.1:8000/search', {
+        const searchResult = await fetch(`${BACKEND_URI}/search`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ export default function Home() {
 
 
 
-      const response = await fetch('http://127.0.0.1:8000/uploadfiles/', {
+      const response = await fetch(`${BACKEND_URI}/uploadfiles/`, {
         method: 'POST',
         body: formData,
       });

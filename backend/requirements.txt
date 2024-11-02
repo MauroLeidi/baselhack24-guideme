@@ -1,0 +1,10 @@
+gunicorn
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+python-multipart
+Pillow
+aiofiles
+openai

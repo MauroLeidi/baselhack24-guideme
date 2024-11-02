@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 // Add these imports at the top of your editor.tsx
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { BACKEND_URI } from '../config';
 
 interface MarkdownPage {
     id: number;
@@ -121,7 +122,7 @@ const Editor: NextPage = () => {
             console.log(improveText)
             console.log(pages[currentPageIndex].image)
             //call api
-            const response = await fetch('http://127.0.0.1:8000/improveText', {
+            const response = await fetch(`${BACKEND_URI}/improveText`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
