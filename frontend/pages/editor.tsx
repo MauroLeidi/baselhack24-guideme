@@ -214,20 +214,34 @@ const Editor: NextPage = () => {
 
     const handleContentChange = (newContent: string) => {
         const updatedPages = [...pages];
+        const currentPage = updatedPages[currentPageIndex];
+
+        // Replace the placeholder with the actual image path
+        let finalContent = newContent.replace(
+            /!\[Step \d+\]\s?\(image\)/g,
+            `![Step ${currentPage.id}](${currentPage.image})`
+        );
+
+        // If there's no image placeholder but we have an image, append it
+        if (currentPage.image && !finalContent.includes(currentPage.image)) {
+            finalContent = `${finalContent}\n\n![Step ${currentPage.id}](${currentPage.image})`;
+        }
+
         updatedPages[currentPageIndex] = {
-            ...updatedPages[currentPageIndex],
-            content: newContent
+            ...currentPage,
+            content: finalContent
         };
         setPages(updatedPages);
     };
     // Function to clean up the display of markdown content
     const getDisplayContent = (content: string): string => {
+        const currentPage = pages[currentPageIndex];
+        if (!currentPage) return content;
+
+        // Replace the full image path/base64 with a placeholder
         return content.replace(
-            /!\[(.*?)\]\(data:image\/[^;]+;base64,[^\)]+\)/g,
-            (match, alt) => `![Image ${alt}][Step ${currentPageIndex + 1}]`
-        ).replace(
-            /\[Step \d+\]\(data:image\/[^;]+;base64,[^\)]+\)/g,
-            ''
+            /!\[Step \d+\]\([^\)]+\)/g,
+            `![Step ${currentPage.id}] (image)`
         );
     };
 
