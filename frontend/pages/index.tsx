@@ -167,17 +167,27 @@ export default function Home() {
               )}
 
               <div className="max-w-xl mx-auto space-y-4">
-                <textarea
-                  value={additionalPrompt}
-                  onChange={(e) => setAdditionalPrompt(e.target.value)}
-                  placeholder="Add a description of what you want to generate..."
-                  className="w-full px-4 py-3 text-gray-800 rounded-xl border-2 border-blue-100 
-                           focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-                           placeholder:text-gray-400
-                           transition-all duration-200
-                           min-h-[100px] resize-none
-                           bg-white"
-                />
+                <div className="relative">
+                  <textarea
+                    value={additionalPrompt}
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      if (text.length <= 500) {
+                        setAdditionalPrompt(text);
+                      }
+                    }}
+                    placeholder="Add a description of what you want to generate..."
+                    className="w-full px-4 py-3 text-gray-800 rounded-xl border-2 border-blue-100 
+               focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+               placeholder:text-gray-400
+               transition-all duration-200
+               min-h-[100px] resize-none
+               bg-white"
+                  />
+                  <div className="absolute bottom-2 right-2 text-sm text-gray-400">
+                    {additionalPrompt.length}/500
+                  </div>
+                </div>
                 {/* New checkbox for online search */}
                 {/* Replace your existing toggle section with this */}
                 <div className="flex justify-start items-center p-4 rounded-xl bg-gray-50/50 border border-gray-100">

@@ -322,18 +322,28 @@ const Editor: NextPage = () => {
                     </h2>
                     <div className="flex items-center gap-4">
                         <div className="flex gap-2">
-                            <textarea
-                                rows={1}
-                                value={improveText}
-                                onChange={(e) => setImproveText(e.target.value)}
-                                disabled={isImproving}
-                                className="w-64 p-3 text-sm bg-gray-50 rounded-xl border focus:ring-2 focus:ring-violet-500/50 resize-none"
-                                placeholder="Write what you want to improve..."
-                            />
+                            <div className="relative w-64">
+                                <textarea
+                                    rows={1}
+                                    value={improveText}
+                                    onChange={(e) => {
+                                        const text = e.target.value;
+                                        if (text.length <= 250) {
+                                            setImproveText(text);
+                                        }
+                                    }}
+                                    disabled={isImproving}
+                                    className="w-full p-3 text-sm bg-gray-50 rounded-xl border focus:ring-2 focus:ring-violet-500/50 resize-none"
+                                    placeholder="Write what you want to improve..."
+                                />
+                                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                                    {improveText.length}/250
+                                </div>
+                            </div>
                             <button
                                 onClick={improvePage}
                                 disabled={isImproving || !improveText.trim()}
-                                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-blue-500 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+                                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-blue-500 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2 font-semibold"
                             >
                                 {isImproving ? (
                                     <>
@@ -372,7 +382,7 @@ const Editor: NextPage = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-blue-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2"
+                                className="px-6 py-2 bg-gray-800 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2"
                             >
                                 <span>💾</span>
                                 Save
