@@ -3,63 +3,69 @@ import { useState } from "react";
 
 interface UploadedPage {
   id: number;
-  content: string;
+  description: string;
+  image: string;
+}
+
+interface ProcessedImage {
+  description: string;
+  image: string;
 }
 
 export default function Home() {
   const router = useRouter();
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
   const [isGenerated, setIsGenerated] = useState(false);
   const [generatedPages, setGeneratedPages] = useState<UploadedPage[]>([]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files) return;
 
-    setUploadedFile(file);
-    setIsGenerated(false); // Reset generated state when new file is uploaded
-    setGeneratedPages([]); // Reset generated pages
+    setUploadedFiles(Array.from(files));
+    setIsGenerated(false);
+    setGeneratedPages([]);
+    setProcessedImages([]);
   };
 
   const handleGenerate = async () => {
-    if (!uploadedFile) return;
+    if (uploadedFiles.length === 0) return;
     setIsLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append('file', uploadedFile);
-      formData.append('description', description);
+      uploadedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
 
-      /* // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Mock generated pages - replace this with your actual generation logic
-      const pages: UploadedPage[] = [
-        {
-          id: 1,
-          content: `# Generated Content\n\nThis is the generated content from your uploaded file: ${uploadedFile.name}\n\n\n\nDescription: ${description}\n\n`
-        }
-      ];
-      setGeneratedPages(pages); */
-
-      const response = await fetch('http://127.0.0.1:8000/api/generate', {  // Changed URL to point to FastAPI backend
+      const response = await fetch('http://127.0.0.1:8000/uploadfiles/', {
         method: 'POST',
         body: formData,
-        // No need to include credentials if you're not using cookies
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate content');
+        throw new Error('Failed to upload files');
       }
 
       const data = await response.json();
-      setGeneratedPages(data.pages);
+      setProcessedImages(data);
+
+      // Create pages from processed images
+      const pages = data.map((item: ProcessedImage, index: number) => ({
+        id: index + 1,
+        description: item.description,
+        image: item.image,
+      }));
+      console.log('Generated pages:', pages);
+
+      setGeneratedPages(pages);
       setIsGenerated(true);
     } catch (error) {
-      console.error('Error generating content:', error);
-      alert('Failed to generate content. Please try again.');
+      console.error('Error uploading files:', error);
+      alert('Failed to upload files. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -102,15 +108,30 @@ export default function Home() {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <span className="mt-2 text-base">Choose a file</span>
+                  <span className="mt-2 text-base">Choose files</span>
                   <input
                     type="file"
                     className="hidden"
                     onChange={handleFileChange}
+                    multiple
+                    accept="image/*"
                   />
                 </label>
               </div>
-              {/* Text Input */}
+
+              {uploadedFiles.length > 0 && (
+                <div className="max-w-xl mx-auto">
+                  <p className="text-gray-600 mb-2">Selected files ({uploadedFiles.length}):</p>
+                  <ul className="text-left text-sm text-gray-600">
+                    {uploadedFiles.map((file, index) => (
+                      <li key={index} className="mb-1">
+                        {file.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="max-w-xl mx-auto">
                 <textarea
                   value={description}
@@ -127,22 +148,21 @@ export default function Home() {
             </div>
 
             <div className="py-4">
-              <p className={`text-lg font-medium ${isGenerated ? 'text-green-600' : 'text-gray-600'
-                }`}>
-                {!uploadedFile && "Please upload a file to continue"}
-                {uploadedFile && !isGenerated && "File uploaded! Click Generate to process"}
-                {uploadedFile && isGenerated && "Generation complete! 🚀"}
+              <p className={`text-lg font-medium ${isGenerated ? 'text-green-600' : 'text-gray-600'}`}>
+                {uploadedFiles.length === 0 && "Please upload files to continue"}
+                {uploadedFiles.length > 0 && !isGenerated && "Files uploaded! Click Generate to process"}
+                {uploadedFiles.length > 0 && isGenerated && "Generation complete! 🚀"}
               </p>
             </div>
 
             <div className="flex justify-center gap-4">
               <button
                 onClick={handleGenerate}
-                disabled={!uploadedFile || isLoading || isGenerated}
+                disabled={uploadedFiles.length === 0 || isLoading || isGenerated}
                 className={`
                   px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200
                   flex items-center gap-2
-                  ${!uploadedFile || isLoading || isGenerated
+                  ${uploadedFiles.length === 0 || isLoading || isGenerated
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-75 shadow-none'
                     : 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg hover:opacity-90 hover:shadow-green-200/50 shadow-green-200/30'
                   }
@@ -154,7 +174,7 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Generating...
+                    Processing...
                   </>
                 ) : (
                   <>
@@ -180,9 +200,30 @@ export default function Home() {
                 Go to Editor
               </button>
             </div>
+
+            {/* {processedImages.length > 0 && (
+              <div className="mt-8">
+                <h5 className="text-xl font-semibold mb-4">Processed Steps</h5>
+                <div className="grid grid-cols-1 gap-6">
+                  {processedImages.map((item, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <h6 className="text-lg font-semibold mb-2">Step {index + 1}</h6>
+                      <img
+                        src={item.image}
+                        alt={`Step ${index + 1}`}
+                        className="max-w-full h-auto mb-4 rounded"
+                      />
+                      <p className="text-gray-700 text-left whitespace-pre-wrap">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )} */}
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

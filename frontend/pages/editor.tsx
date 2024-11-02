@@ -9,7 +9,10 @@ import jsPDF from 'jspdf';
 
 interface MarkdownPage {
     id: number;
+    description: string;
+    image?: string;
     content: string;
+
 }
 
 const convertMarkdown = (markdown: string): string => {
@@ -37,12 +40,13 @@ const Editor: NextPage = () => {
             ![Logo](/assets/dilo_5.jpg)
             
             ## More content
-            You can add text around your images...`
+            You can add text around your images...`,
+            description: 'This is the first page',
         },
-        { id: 2, content: "# Product Overview\n\n## Description\nOur product helps you create beautiful documentation.\n\n## Benefits\n- Fast\n- Reliable\n- Secure" },
-        { id: 3, content: "# Getting Started\n\n## Installation\n```bash\nnpm install my-package\n```\n\n## Usage\nFollow these steps..." },
-        { id: 4, content: "# Advanced Features\n\n## Custom Themes\nYou can customize the appearance...\n\n## Plugins\nExtend functionality with plugins..." },
-        { id: 5, content: "# Support\n\n## Contact\nReach out to us at...\n\n## FAQ\nCommonly asked questions..." }
+        { id: 2, content: "# Product Overview\n\n## Description\nOur product helps you create beautiful documentation.\n\n## Benefits\n- Fast\n- Reliable\n- Secure", description: 'This is the second page' },
+        { id: 3, content: "# Getting Started\n\n## Installation\n```bash\nnpm install my-package\n```\n\n## Usage\nFollow these steps...", description: 'This is the third page' },
+        { id: 4, content: "# Advanced Features\n\n## Custom Themes\nYou can customize the appearance...\n\n## Plugins\nExtend functionality with plugins...", description: 'This is the fourth page' },
+        { id: 5, content: "# Support\n\n## Contact\nReach out to us at...\n\n## FAQ\nCommonly asked questions...", description: 'This is the fifth page' },
     ];
 
     const router = useRouter();
@@ -112,11 +116,41 @@ const Editor: NextPage = () => {
             // Mock improved content - in reality this would come from your API
             const improvedContent = `# Improved Version\n\n${pages[currentPageIndex].content}\n\n## Improvements Made\nBased on your request: "${improveText}"\n\n- Enhanced the content structure\n- Improved clarity and readability\n- Added relevant examples`;
 
+            console.log("ecco")
+            console.log(pages[currentPageIndex].description)
+            console.log(improveText)
+            console.log(pages[currentPageIndex].image)
+            //call api
+            const response = await fetch('http://127.0.0.1:8000/improveText', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: pages[currentPageIndex].description,
+                    improveText,
+                    image: pages[currentPageIndex].image
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.improved_content) {
+                throw new Error('No improved content received from API');
+            }
+
+            // Create the new content using the page_instruction from the response
+            const newContent = `# Step ${pages[currentPageIndex].id}\n\n${data.improved_content}\n\n![Step ${pages[currentPageIndex].id}](${pages[currentPageIndex].image})`;
+
             // Update the current page with improved content
             const updatedPages = [...pages];
             updatedPages[currentPageIndex] = {
                 ...updatedPages[currentPageIndex],
-                content: improvedContent
+                content: newContent
             };
 
             setPages(updatedPages);
@@ -140,6 +174,10 @@ const Editor: NextPage = () => {
                 // Check if we have content from the file upload
                 if (router.query.pages) {
                     const pagesData = JSON.parse(router.query.pages as string) as MarkdownPage[];
+                    // set content to "`# Step ${pages[i].id}\n\n${pages[i].content}\n\n![Step ${pages[i].id}](${pages[i].image})`"
+                    pagesData.forEach((page) => {
+                        page.content = `# Step ${page.id}\n\n${page.description}\n\n![Step ${page.id}](${page.image})`;
+                    });
                     setPages(pagesData);
                 } else {
                     // Fall back to mock pages if no uploaded content
@@ -181,6 +219,16 @@ const Editor: NextPage = () => {
             content: newContent
         };
         setPages(updatedPages);
+    };
+    // Function to clean up the display of markdown content
+    const getDisplayContent = (content: string): string => {
+        return content.replace(
+            /!\[(.*?)\]\(data:image\/[^;]+;base64,[^\)]+\)/g,
+            (match, alt) => `![Image ${alt}][Step ${currentPageIndex + 1}]`
+        ).replace(
+            /\[Step \d+\]\(data:image\/[^;]+;base64,[^\)]+\)/g,
+            ''
+        );
     };
 
     const handleSave = async () => {
@@ -324,7 +372,7 @@ const Editor: NextPage = () => {
                     <div className="space-y-2">
                         <h3 className="font-medium">Markdown</h3>
                         <textarea
-                            value={pages[currentPageIndex]?.content || ''}
+                            value={getDisplayContent(pages[currentPageIndex]?.content || '')}
                             onChange={(e) => handleContentChange(e.target.value)}
                             className="w-full h-[600px] p-4 font-mono text-sm bg-gray-50 rounded-xl border focus:ring-2 focus:ring-violet-500/50 resize-none"
                             placeholder="Enter your markdown here..."

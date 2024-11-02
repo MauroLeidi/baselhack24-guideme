@@ -17,7 +17,8 @@ import json
 from fastapi import FastAPI, UploadFile, File
 from typing import List
 import uvicorn
-from helpers import process_files_with_descriptions, encode_image_resized
+from helpers import process_files_with_descriptions, encode_image_resized, extract_images_from_markdown, create_chat_messages
+import re
 import base64
 from dotenv import load_dotenv
 
@@ -51,6 +52,13 @@ class Page(BaseModel):
 
 class Instructions(BaseModel):
     pages_instructions: list[str]
+
+class Instruction(BaseModel):
+    page_instruction: str
+class ImproveTextRequest(BaseModel):
+    description: str
+    improveText: str
+    image: str
 
 load_dotenv()
 
@@ -105,6 +113,42 @@ Here are some interesting patterns we found..."""
         raise HTTPException(status_code=400, detail=str(e))
     
 
+
+
+@app.post("/improveText")
+async def improve_text(request: ImproveTextRequest):
+    description = request.description
+    improve_text = request.improveText
+    image = request.image
+
+    if not description or not improve_text:
+        raise HTTPException(status_code=400, detail="Missing content or improvement instructions")
+
+    # Create messages for the API call
+    messages = create_chat_messages(description, improve_text, image)
+    
+
+    client = OpenAI(
+)
+    # Call OpenAI API
+    response = client.beta.chat.completions.parse(
+    model="gpt-4o-mini",
+    messages=messages,
+    response_format=Instruction)
+
+    json_str = response.choices[0].message.parsed
+    print(json_str)
+    # Access the list of instructions
+    if json_str is None:
+        raise HTTPException(status_code=400, detail="Failed to parse instructions from the response.")
+
+    # Extract the improved content
+    improved_content = json_str.page_instruction
+    return {
+        'improved_content': improved_content
+    }
+
+
 @app.post("/uploadfiles/")
 async def uploadfiles(files: List[UploadFile] = File(...)):
     """
@@ -127,7 +171,7 @@ async def uploadfiles(files: List[UploadFile] = File(...)):
     # Create a prompt for OpenAI using the filenames
     prompt =f"""I uploaded {len(filenames)} images. These images provide visual instructions for assembling an object. Please analyze each image carefully and generate a clear, concise set of assembly instructions. \
     For each image, provide the following description: Create a detailed instruction in Markdown format that describes what the user should do based on the visual information presented in the corresponding image. \
-    Output Format: The response should be structured as a list, where each element is a string that contains the Markdown-formatted instruction for that particular image. It shoudl be list with {len(filenames)} Descriptions
+    Output Format: The response should be structured as a list, where each element is a string that contains the Markdown-formatted instruction for that particular image. Max 1 description per image. So the list should be {len(filenames)} Descriptions (1 description per image)
     
     An example is provided below
     
