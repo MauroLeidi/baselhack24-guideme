@@ -3,6 +3,7 @@ import base64
 from typing import List
 from PIL import Image
 import re
+from typing import List
 
 ## HELPERS
 # Function to encode the image

@@ -18,6 +18,7 @@ from fastapi import FastAPI, UploadFile, File
 from typing import List
 import uvicorn
 from helpers import process_files_with_descriptions, encode_image_resized, extract_images_from_markdown, create_chat_messages
+from bing import bing_search
 import re
 import base64
 from dotenv import load_dotenv
@@ -112,7 +113,13 @@ Here are some interesting patterns we found..."""
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+class SearchQuery(BaseModel):
+    query: str
 
+@app.post("/search")
+async def search(query: SearchQuery):
+    result = bing_search(query.query)
+    return {"context": result}
 
 
 @app.post("/improveText")
@@ -150,7 +157,7 @@ async def improve_text(request: ImproveTextRequest):
 
 
 @app.post("/uploadfiles/")
-async def uploadfiles(files: List[UploadFile] = File(...)):
+async def uploadfiles(files: List[UploadFile] = File(...),additional_prompt: Optional[str] = Form(None)):
     """
     Upload multiple files and return their filenames and descriptions.
 
@@ -161,6 +168,7 @@ async def uploadfiles(files: List[UploadFile] = File(...)):
         dict: A dictionary containing the filenames of the uploaded files and descriptions.
     """
     filenames = [file.filename for file in files]
+    print(additional_prompt)
     
     # Process uploaded files and convert them to base64
     images_b64 = []
@@ -207,7 +215,12 @@ async def uploadfiles(files: List[UploadFile] = File(...)):
     
     Input: 3 images of a paper airplane construction.
     Output: list of lenght = 3 containing the description of each step. eg: {example}
+
+
+    Additional context that may be helpful: {additional_prompt}
     """
+
+    print(prompt)
 
     
     client = OpenAI(
