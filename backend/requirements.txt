@@ -8,3 +8,7 @@ python-multipart
 Pillow
 aiofiles
 openai
+pydub
+gtts
+cv2
+moviepy

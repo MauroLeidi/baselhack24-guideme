@@ -80,7 +80,7 @@ const Editor: NextPage = () => {
                 });
 
                 // Add page to PDF
-                const imgData = canvas.toDataURL('image/png');
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
                 if (i > 0) {
                     pdf.addPage();
                 }
@@ -145,7 +145,7 @@ const Editor: NextPage = () => {
             }
 
             // Create the new content using the page_instruction from the response
-            const newContent = `# Step ${pages[currentPageIndex].id}\n\n${data.improved_content}\n\n![Step ${pages[currentPageIndex].id}](${pages[currentPageIndex].image})`;
+            const newContent = `${data.improved_content}\n\n![Step ${pages[currentPageIndex].id}](${pages[currentPageIndex].image})`;
 
             // Update the current page with improved content
             const updatedPages = [...pages];
@@ -175,9 +175,8 @@ const Editor: NextPage = () => {
                 // Check if we have content from the file upload
                 if (router.query.pages) {
                     const pagesData = JSON.parse(router.query.pages as string) as MarkdownPage[];
-                    // set content to "`# Step ${pages[i].id}\n\n${pages[i].content}\n\n![Step ${pages[i].id}](${pages[i].image})`"
                     pagesData.forEach((page) => {
-                        page.content = `# Step ${page.id}\n\n${page.description}\n\n![Step ${page.id}](${page.image})`;
+                        page.content = `${page.description}\n\n![Step ${page.id}](${page.image})`;
                     });
                     setPages(pagesData);
                 } else {
@@ -366,7 +365,7 @@ const Editor: NextPage = () => {
                                 disabled={currentPageIndex === 0}
                                 className={`p-2 rounded-xl transition-all ${currentPageIndex === 0
                                     ? 'bg-gray-100 opacity-50 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-violet-600 to-blue-500 text-white shadow-sm hover:opacity-90'
+                                    : 'bg-white text-white shadow-sm hover:opacity-90'
                                     }`}
                             >
                                 <span className={`text-2xl ${currentPageIndex === 0 ? 'grayscale' : ''}`}>⬅️</span>
@@ -376,17 +375,10 @@ const Editor: NextPage = () => {
                                 disabled={currentPageIndex === pages.length - 1}
                                 className={`p-2 rounded-xl transition-all ${currentPageIndex === pages.length - 1
                                     ? 'bg-gray-100 opacity-50 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-violet-600 to-blue-500 text-white shadow-sm hover:opacity-90'
+                                    : 'bg-white text-white shadow-sm hover:opacity-90'
                                     }`}
                             >
                                 <span className={`text-2xl ${currentPageIndex === pages.length - 1 ? 'grayscale' : ''}`}>➡️</span>
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-6 py-2 bg-gray-800 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2"
-                            >
-                                <span>💾</span>
-                                Save
                             </button>
                         </div>
                     </div>
