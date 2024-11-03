@@ -4,8 +4,9 @@ __pycache__/
 __pycache__/
 pngs/
 kallax_shelving_unit.pdf
-ikea_manual_to_png.ipynb
-test_functions.ipynb
+.ipynb
+.ipynb_checkpoints
+*.ipynb
 test_images
 airplane_demo
 backend/.ruff_cache
