@@ -2,19 +2,17 @@ import base64
 import io
 import os
 import re
+import shutil
 import subprocess
-from typing import List
+from typing import List, Tuple
 
+import azure.cognitiveservices.speech as speechsdk
 import cv2
-from gtts import gTTS
+from openai import OpenAI
 from PIL import Image
 from pydub import AudioSegment
-import shutil
-from openai import OpenAI
+
 from schemas import CleanedText
-import time
-import azure.cognitiveservices.speech as speechsdk
-from typing import Tuple
 
 
 # Function to encode image as base64 and resize to fit within max_sizexmax_size

@@ -1,23 +1,32 @@
 import base64
+import io
 import os
 import shutil
-import tempfile
 from typing import List, Optional
 
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from openai import OpenAI
-from pydantic import BaseModel
+from PIL import Image
 
 from bing import bing_search
-from helpers import create_chat_messages, generateteVideofromimagesandaudio, process_files_with_descriptions, clean_descriptions
+from helpers import (
+    clean_descriptions,
+    create_chat_messages,
+    generateteVideofromimagesandaudio,
+    process_files_with_descriptions,
+)
 from openai_prompt import example
-from schemas import ImproveTextRequest, Instruction, Instructions, SearchQuery, VideoRequest, VideoResponse
-from PIL import Image
-import io
+from schemas import (
+    ImproveTextRequest,
+    Instruction,
+    Instructions,
+    SearchQuery,
+    VideoRequest,
+    VideoResponse,
+)
 
 # FastAPI app
 app = FastAPI()
