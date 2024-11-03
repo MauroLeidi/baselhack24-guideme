@@ -4,7 +4,7 @@ A web application that generates detailed documentation from a sequence of image
 
 ## Features
 
-- **Image Upload**: Support for multiple image uploads
+- **Image Upload**: Support for multiple image uploads (the images are considered as a temporal sequence)
 - **AI-Powered Content Generation**: Automatically generates descriptions for each image
 - **Web Search Integration**: Optional web search feature to enhance content generation with relevant context
 - **Interactive Editor**:
@@ -97,7 +97,8 @@ npm run dev
 3. (Optional) Add a description and enable web search
 4. Click "Generate" to process the images
 5. Use the editor to customize the generated content
-6. Export to PDF or continue editing as needed
+6. Optionally ask for redefined AI generated content
+7. Export to PDF or continue editing as needed
 
 
 
