@@ -15,6 +15,88 @@ interface MarkdownPage {
     content: string;
 
 }
+interface VideoRequest {
+    images: string[];      // base64 encoded images
+    descriptions: string[];
+}
+
+interface VideoResponse {
+    video: string;         // base64 data URL of the video
+}
+const downloadBase64Video = (dataUrl: string, filename: string): void => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+const generateAndDownloadVideo = async (
+    images: string[],
+    descriptions: string[]
+): Promise<void> => {
+    try {
+        const response = await fetch('http://localhost:8000/generate-video/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                images,
+                descriptions
+            } as VideoRequest)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json() as VideoResponse;
+
+        // Download the video using the base64 data URL
+        downloadBase64Video(data.video, 'generated_video.mp4');
+
+    } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+        throw error;  // Re-throw to handle in the calling code if needed
+    }
+};
+// Add this new function to handle video generation from pages
+const handleVideoGeneration = async (pages: MarkdownPage[], setIsGeneratingVideo: (loading: boolean) => void): Promise<void> => {
+    try {
+        // Extract images and descriptions from pages
+        setIsGeneratingVideo(true);
+        const images: string[] = [];
+        const descriptions: string[] = [];
+
+        pages.forEach(page => {
+            if (page.image) {
+                // Get base64 from page.image if it's already base64
+                // or convert URL to base64 if it's a URL
+                const imageStr = page.image.startsWith('data:image')
+                    ? page.image
+                    : page.image; // You might need to convert URL to base64 here
+
+                images.push(imageStr);
+                descriptions.push(page.description);
+            }
+        });
+
+        if (images.length === 0) {
+            throw new Error('No images found in pages');
+        }
+
+        await generateAndDownloadVideo(images, descriptions);
+
+    } catch (error) {
+        console.error('Error generating video:', error instanceof Error ? error.message : 'Unknown error');
+        alert('Failed to generate video. Please try again.');
+    }
+    finally {
+        setIsGeneratingVideo(false);
+    }
+};
 
 const convertMarkdown = (markdown: string): string => {
     return markdown
@@ -57,6 +139,7 @@ const Editor: NextPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [improveText, setImproveText] = useState<string>('');
     const [isImproving, setIsImproving] = useState<boolean>(false);
+    const [isGeneratingVideo, setIsGeneratingVideo] = useState<boolean>(false);
 
     // Add this function in your Editor component
     const generatePDF = async () => {
@@ -221,6 +304,10 @@ const Editor: NextPage = () => {
             /!\[Step \d+\]\s?\(image\)/g,
             `![Step ${currentPage.id}](${currentPage.image})`
         );
+        let finalDescription = newContent.replace(
+            /!\[Step \d+\]\s?\(image\)/g,
+            ""
+        );
 
         // If there's no image placeholder but we have an image, append it
         if (currentPage.image && !finalContent.includes(currentPage.image)) {
@@ -229,7 +316,8 @@ const Editor: NextPage = () => {
 
         updatedPages[currentPageIndex] = {
             ...currentPage,
-            content: finalContent
+            content: finalContent,
+            description: finalDescription
         };
         setPages(updatedPages);
     };
@@ -304,12 +392,32 @@ const Editor: NextPage = () => {
                         ← Back
                     </button>
                     <h1 className="text-2xl font-bold">Markdown Editor</h1>
-                    <button
-                        onClick={generatePDF}
-                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity"
-                    >
-                        Export PDF
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={generatePDF}
+                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity"
+                        >
+                            Export PDF
+                        </button>
+                        <button
+                            onClick={() => handleVideoGeneration(pages, setIsGeneratingVideo)}
+                            disabled={isGeneratingVideo}
+                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isGeneratingVideo ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Generating...
+                                </>
+                            ) : (
+                                'Generate Video'
+                            )}
+                        </button>
+                    </div>
+
                 </div>
 
 
@@ -379,6 +487,13 @@ const Editor: NextPage = () => {
                                     }`}
                             >
                                 <span className={`text-2xl ${currentPageIndex === pages.length - 1 ? 'grayscale' : ''}`}>➡️</span>
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-blue-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2"
+                            >
+                                <span>💾</span>
+                                Save
                             </button>
                         </div>
                     </div>

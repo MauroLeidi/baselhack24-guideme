@@ -13,3 +13,4 @@ gtts
 cv2
 moviepy
 ruff
+azure-cognitiveservices-speech

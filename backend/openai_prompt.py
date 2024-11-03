@@ -12,18 +12,5 @@ example = [
     " # Section 2 \
     2. **Fold the Top Corners to the Center** \
        - Take the top-left corner of the paper and fold it down toward the center crease, aligning the edge with the crease to form a triangle. \
-       - Repeat on the top-right corner, bringing it to meet the center crease and creating a **pointed top**.", 
-    
-    " # Section 3 \
-    3. **Fold the Sides Toward the Center** \
-        - Fold each side of the paper again toward the center crease, starting from the outer edges. \
-        - This will create a longer, **sharper triangle** shape, with a pointed tip at the top.",
-    
-    " # Section 4 \
-    4. **Create the Wings** \
-       - Flip the airplane over so the triangle is facing down. \
-       - Fold each side downward to form the wings, aligning the edges of the paper with the bottom of the airplane’s body. \
-       - Make sure both wings are even so your airplane flies straight. \
-    ## Ready for Takeoff! \
-    Now your paper airplane is ready to fly! Hold it gently near the bottom and launch it forward for the best flight."
+       - Repeat on the top-right corner, bringing it to meet the center crease and creating a **pointed top**."
 ]

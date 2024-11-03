@@ -9,6 +9,12 @@ import cv2
 from gtts import gTTS
 from PIL import Image
 from pydub import AudioSegment
+import shutil
+from openai import OpenAI
+from schemas import CleanedText
+import time
+import azure.cognitiveservices.speech as speechsdk
+from typing import Tuple
 
 
 # Function to encode image as base64 and resize to fit within max_sizexmax_size
@@ -239,30 +245,64 @@ def get_files(directory, extension):
     
     return png_files
 
-def generate_audio_clips(descriptions, basepath, language="en"):
-    """Generate audio clips for each description, return their file paths and durations.
+def generate_audio_clips(
+    descriptions: List[str], 
+    basepath: str, 
+    language: str = "en-US",
+) -> List[Tuple[str, int]]:
+    """
+    Generate audio clips using Azure Speech Services.
 
     Args:
-        descriptions (list of str): List of text descriptions to convert to audio.
-        basepath (str): The base path where audio files will be saved.
-        language (str): The language code for text-to-speech (default is "en").
+        descriptions (list of str): List of text descriptions to convert to audio
+        basepath (str): The base path where audio files will be saved
+        speech_key (str): Azure Speech Services API key
+        speech_region (str): Azure Speech Services region
+        language (str): Language code for speech synthesis (default "en-US")
+        voice_name (str): Name of the voice to use (default "en-US-JennyNeural")
 
     Returns:
-        list of tuples: A list containing tuples of (audio_path, duration).
+        list of tuples: A list containing tuples of (audio_path, duration_ms)
     """
-    audio_info = []  # List to hold tuples of (audio_path, duration)
+    audio_info = []
+    
+    speech_key = os.getenv("SPEECH_KEY")
+    speech_region = "switzerlandnorth"
+    voice_name: str = "en-US-BrandonMultilingualNeural"
+
+    # Configure speech service
+    speech_config = speechsdk.SpeechConfig(
+        subscription=speech_key, 
+        region=speech_region
+    )
+    speech_config.speech_synthesis_voice_name = voice_name
+
     for idx, text in enumerate(descriptions):
-        # Generate audio file
-        tts = gTTS(text=text, lang=language)
-        temp_audio_path = f"{basepath}audio_{idx}.mp3"
-        tts.save(temp_audio_path)
+        # Set up audio output configuration
+        audio_path = f"{basepath}audio_{idx}.mp3"
+        audio_config = speechsdk.AudioConfig(filename=audio_path)
 
-        # Load the audio file to get its duration
-        audio = AudioSegment.from_file(temp_audio_path)
-        duration = len(audio)  # Duration in milliseconds
+        # Create speech synthesizer
+        speech_synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=speech_config, 
+            audio_config=audio_config
+        )
 
-        # Append the path and duration as a tuple
-        audio_info.append((temp_audio_path, duration))
+        # Generate speech and wait for completion
+        speech_synthesis_result = speech_synthesizer.speak_text_async(text).get()
+
+        if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            # Load the audio file to get its duration
+            audio = AudioSegment.from_file(audio_path)
+            duration = len(audio)  # Duration in milliseconds
+            audio_info.append((audio_path, duration))
+        else:
+            if speech_synthesis_result.reason == speechsdk.ResultReason.Canceled:
+                cancellation_details = speech_synthesis_result.cancellation_details
+                print(f"Speech synthesis canceled: {cancellation_details.reason}")
+                if cancellation_details.reason == speechsdk.CancellationReason.Error:
+                    print(f"Error details: {cancellation_details.error_details}")
+            raise Exception("Speech synthesis failed")
 
     return audio_info
 
@@ -276,25 +316,73 @@ def generateteVideofromimagesandaudio(pngs, descriptions):
     Returns:
         None
     """
-    basepath = '/tmp'
-    # Generate mp3s from each text description, and record the durations
-    audiopaths, durations = zip(*generate_audio_clips(descriptions, basepath=basepath, language="en"))
-    audiopaths = list(audiopaths)
-    durations = list(durations)
-
-    # Combine the audios into a single audio file
-    merge_mp3s(audiopaths, basepath + '/totalaudio.mp3')
-
-    # Convert durations from milliseconds to seconds
-    durations = [d / 1000 for d in durations]
+    # Create output directory if it doesn't exist
+    output_dir = "./output"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    # Log durations and images being processed
-    print(durations)
-    print(pngs)
+    # Create temp directory for audio files
+    temp_dir = os.path.join(output_dir, "temp")
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+        
+    try:
+        # Generate mp3s from each text description, and record the durations
+        audiopaths, durations = zip(*generate_audio_clips(
+            descriptions, 
+            basepath=os.path.join(temp_dir, "audio_"),  # Changed basepath
+            language="en-US"
+        ))
+        audiopaths = list(audiopaths)
+        durations = list(durations)
 
-    # Generate a single video from the images using the durations
-    create_video_from_images(pngs, durations, '/tmp/totalvideo.mp4')
+        # Combine the audios into a single audio file
+        total_audio_path = os.path.join(temp_dir, 'totalaudio.mp3')
+        merge_mp3s(audiopaths, total_audio_path)
 
-    # Generate a single video with the combined audio and the generated video
-    combine_video_and_audio('/tmp/totalvideo.mp4', '/tmp/totalaudio.mp3', '/tmp/video_with_audio.mp4')
+        # Convert durations from milliseconds to seconds
+        durations = [d / 1000 for d in durations]
+        
+        # Log durations and images being processed
+        print(durations)
+        print(pngs)
 
+        # Generate a single video from the images using the durations
+        video_path = os.path.join(temp_dir, 'totalvideo.mp4')
+        create_video_from_images(pngs, durations, video_path)
+
+        # Generate a single video with the combined audio and the generated video
+        output_path = os.path.join(output_dir, 'video_with_audio.mp4')
+        combine_video_and_audio(video_path, total_audio_path, output_path)
+        
+        return output_path
+        
+    finally:
+        # Clean up temp directory
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+
+
+def clean_descriptions(descriptions):
+    client = OpenAI(
+    )
+    new_descriptions = []
+    for i in descriptions:
+        # Call OpenAI API
+        response = client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Convert the following processed text into natural, engaging speech while maintaining the key information."
+            },
+            {
+                "role": "user",
+                "content": i
+            }],
+        
+        response_format=CleanedText)
+        json_str = response.choices[0].message.parsed
+        new_descriptions.append(json_str.cleaned_text)
+    return new_descriptions
+        
