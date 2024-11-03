@@ -12,3 +12,4 @@ pydub
 gtts
 cv2
 moviepy
+ruff

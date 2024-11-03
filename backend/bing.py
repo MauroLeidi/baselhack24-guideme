@@ -1,11 +1,10 @@
 
-import requests
-from typing import List, Dict
 import json
-from dotenv import load_dotenv
 import os
+from typing import Dict, List, Optional
+
 import requests
-from typing import Optional
+from dotenv import load_dotenv
 
 load_dotenv()
 

@@ -1,20 +1,16 @@
-import io
 import base64
-from typing import List
-from PIL import Image
-import re
-from typing import List
-
+import io
 import os
-from gtts import gTTS
-from moviepy.editor import *
-import tempfile
-import cv2
-from pydub import AudioSegment
+import re
 import subprocess
+from typing import List
 
-## HELPERS
-# Function to encode the image
+import cv2
+from gtts import gTTS
+from PIL import Image
+from pydub import AudioSegment
+
+
 # Function to encode image as base64 and resize to fit within max_sizexmax_size
 def encode_image_resized(file, max_size=(750, 750), colors=64):
     # Open the image and convert to RGB (or use original mode if necessary)
