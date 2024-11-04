@@ -2,7 +2,8 @@
 
 A web application that generates detailed documentation from a sequence of images using AI. The application processes uploaded images, generates descriptive content, and provides an interactive markdown editor for customization.
 
-## TEST IT YOURSELF AT https://frontend-guideme.azurewebsites.net/
+## (NOW OFFLINE)TEST IT YOURSELF AT https://frontend-guideme.azurewebsites.net/
+## IF YOU WANT TO TRY YOU NEED TO RUN IT LOCALLY, AND YOU NEED OPENAI API KEY
 
 
 ## Features
